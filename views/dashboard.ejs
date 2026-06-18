@@ -66,6 +66,14 @@
               <label for="serviceNotes">Additional notes (optional)</label>
               <textarea id="serviceNotes" name="serviceNotes" rows="2" placeholder="Any specific details..."></textarea>
             </div>
+            <div class="form-group">
+              <label for="paymentMethod">Payment method</label>
+              <select id="paymentMethod" name="paymentMethod" required>
+                <option value="paystack">Paystack</option>
+                <option value="flutterwave">Flutterwave</option>
+                <option value="paypal">PayPal</option>
+              </select>
+            </div>
             <div id="serviceFormStatus" class="form-status" style="display:none;"></div>
             <button type="submit" class="btn btn-primary" id="serviceSubmitBtn">Submit request</button>
             <div id="paypal-button-container" style="margin-top:16px;display:none;"></div>
@@ -83,5 +91,8 @@
   </section>
 
 <%- include('partials/footer') %>
-<script src="https://www.paypal.com/sdk/js?client-id=<%= process.env.PAYPAL_CLIENT_ID || '' %>&currency=USD" data-sdk-integration-source="button-factory"></script>
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script src="https://checkout.flutterwave.com/v3.js"></script>
+<script src="https://www.paypal.com/sdk/js?client-id=<%= process.env.PAYPAL_CLIENT_ID || '' %>&currency=USD"></script>
+<script>var PAYSTACK_PUBLIC_KEY = '<%= process.env.PAYSTACK_PUBLIC_KEY || "" %>'; var FW_PUBLIC_KEY = '<%= process.env.FLUTTERWAVE_PUBLIC_KEY || "" %>'; var USER_EMAIL = '<%= user ? user.email : "" %>';</script>
 <%- include('partials/scripts') %>

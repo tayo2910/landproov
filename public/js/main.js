@@ -279,53 +279,9 @@ document.addEventListener('DOMContentLoaded', function () {
             '</div>' +
             (s.notes ? '<p class="service-notes">' + s.notes + '</p>' : '') +
             '<p class="service-date">Requested ' + created + '</p>' +
-            '<div style="margin-top:16px;display:flex;align-items:center;gap:12px;">' +
+            '<div style="margin-top:16px;">' +
               '<span style="font-weight:700;font-size:1.2rem;color:var(--forest);">' + amountFormatted + '</span>' +
-              '<button class="btn btn-primary pay-now-btn" data-service-id="' + s.id + '" data-amount="' + (s.amount || 0) + '" style="padding:8px 20px;font-size:0.9rem;">Pay Now with PayPal</button>' +
-            '</div>';
-
-          var payBtn = card.querySelector('.pay-now-btn');
-          if (payBtn) {
-            payBtn.addEventListener('click', async function () {
-              payBtn.disabled = true;
-              payBtn.textContent = 'Opening PayPal...';
-              try {
-                var orderRes = await fetch('/api/paypal/create-order', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ amount: s.amount, serviceId: s.id }),
-                });
-                var orderData = await orderRes.json();
-                if (!orderData.success) throw new Error(orderData.message);
-
-                var ppContainer = document.createElement('div');
-                ppContainer.id = 'pp-temp-' + s.id;
-                payBtn.parentNode.appendChild(ppContainer);
-
-                paypal.Buttons({
-                  createOrder: function () { return orderData.orderID; },
-                  onApprove: function (data) {
-                    fetch('/api/paypal/capture-order', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ orderID: data.orderID, serviceId: s.id }),
-                    }).then(function (r) { return r.json(); }).then(function (d) {
-                      if (d.success) { alert('Payment successful!'); }
-                      else { alert('Verification failed. Contact support.'); }
-                      loadServices();
-                    }).catch(function () { alert('Verification failed.'); loadServices(); });
-                  },
-                  onCancel: function () {
-                    loadServices();
-                  },
-                }).render('#' + ppContainer.id);
-              } catch (err) {
-                alert('Could not initialize PayPal. Please try again.');
-                payBtn.disabled = false;
-                payBtn.textContent = 'Pay Now with PayPal';
-              }
-            });
-          }
+            '</div>'
         }
 
         list.appendChild(card);
@@ -341,6 +297,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var serviceTypeEl = document.getElementById('serviceType');
     var priceDisplay = document.getElementById('priceDisplay');
+    var paymentMethodEl = document.getElementById('paymentMethod');
     var paypalContainer = document.getElementById('paypal-button-container');
     var prices = { 'Land & Property Verification': 150, 'Land Registration, Survey & Documentation': 1800, 'Site Visits & Documentation': 300, 'Quantity Surveying': 300, 'Agent & Developer Meetings': 150, 'Project Monitoring': 500 };
 
@@ -367,6 +324,7 @@ document.addEventListener('DOMContentLoaded', function () {
           serviceType: serviceTypeEl.value,
           propertyLocation: document.getElementById('propertyLocation').value,
           notes: document.getElementById('serviceNotes').value,
+          paymentMethod: paymentMethodEl ? paymentMethodEl.value : 'paystack',
         };
 
         var res = await fetch('/api/user/services', {
@@ -379,61 +337,132 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (result.success) {
           var serviceId = result.service ? result.service.id : null;
+          var pm = result.paymentMethod || data.paymentMethod;
 
-          status.className = 'form-status success';
-          status.textContent = 'Service created! Please complete payment below.';
-          status.style.display = 'block';
-          form.reset();
-          if (priceDisplay) priceDisplay.textContent = 'Select a service type to see the price';
-          btn.style.display = 'none';
+          if (pm === 'paystack' && result.access_code && PAYSTACK_PUBLIC_KEY) {
+            status.className = 'form-status success';
+            status.textContent = 'Service created! Opening payment...';
+            status.style.display = 'block';
+            form.reset();
+            if (priceDisplay) priceDisplay.textContent = 'Select a service type to see the price';
 
-          paypalContainer.style.display = 'block';
-          paypalContainer.innerHTML = '';
-
-          try {
-            var orderRes = await fetch('/api/paypal/create-order', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ amount: result.service ? result.service.amount : 0, serviceId: serviceId }),
-            });
-            var orderData = await orderRes.json();
-            if (!orderData.success) throw new Error(orderData.message);
-
-            paypal.Buttons({
-              createOrder: function () { return orderData.orderID; },
-              onApprove: function (data) {
-                fetch('/api/paypal/capture-order', {
+            var handler = PaystackPop.setup({
+              access_code: result.access_code,
+              onClose: function () {
+                status.textContent = 'Payment cancelled. You can pay later from your services list.';
+                loadServices();
+              },
+              callback: function (transaction) {
+                fetch('/api/payment/verify', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ orderID: data.orderID, serviceId: serviceId }),
-                }).then(function (capRes) { return capRes.json(); }).then(function (capData) {
-                  if (capData.success) {
-                    status.textContent = 'Payment successful! Service is now active.';
-                  } else {
-                    status.textContent = 'Payment could not be verified. Please contact support.';
-                  }
-                  paypalContainer.style.display = 'none';
-                  btn.style.display = '';
+                  body: JSON.stringify({ reference: transaction.reference, serviceId: serviceId }),
+                }).then(function () {
+                  status.textContent = 'Payment successful! Service is now active.';
                   loadServices();
                 }).catch(function () {
-                  status.textContent = 'Verification failed. Please contact support.';
-                  paypalContainer.style.display = 'none';
-                  btn.style.display = '';
+                  status.textContent = 'Payment completed but verification pending.';
+                  loadServices();
+                });
+              }
+            });
+            handler.openIframe();
+          } else if (pm === 'flutterwave' && FW_PUBLIC_KEY) {
+            status.className = 'form-status success';
+            status.textContent = 'Service created! Opening payment...';
+            status.style.display = 'block';
+            form.reset();
+            if (priceDisplay) priceDisplay.textContent = 'Select a service type to see the price';
+
+            var amount = result.service ? result.service.amount / 100 : 0;
+            FlutterwaveCheckout({
+              public_key: FW_PUBLIC_KEY,
+              tx_ref: 'lp-' + Date.now(),
+              amount: amount,
+              currency: 'USD',
+              customer: { email: USER_EMAIL },
+              callback: function (payment) {
+                fetch('/api/flutterwave/verify', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ transaction_id: payment.transaction_id, serviceId: serviceId }),
+                }).then(function () {
+                  status.textContent = 'Payment successful! Service is now active.';
+                  loadServices();
+                }).catch(function () {
+                  status.textContent = 'Payment completed but verification pending.';
                   loadServices();
                 });
               },
-              onCancel: function () {
+              onclose: function () {
                 status.textContent = 'Payment cancelled. You can pay later from your services list.';
-                paypalContainer.style.display = 'none';
-                btn.style.display = '';
                 loadServices();
-              },
-            }).render('#paypal-button-container');
-          } catch (ppErr) {
-            status.className = 'form-status error';
-            status.textContent = 'Could not initialize PayPal. Please try again.';
-            paypalContainer.style.display = 'none';
-            btn.style.display = '';
+              }
+            });
+          } else if (pm === 'paypal' && typeof paypal !== 'undefined') {
+            status.className = 'form-status success';
+            status.textContent = 'Service created! Please complete payment below.';
+            status.style.display = 'block';
+            form.reset();
+            if (priceDisplay) priceDisplay.textContent = 'Select a service type to see the price';
+            btn.style.display = 'none';
+            if (paymentMethodEl) paymentMethodEl.style.display = 'none';
+
+            paypalContainer.style.display = 'block';
+            paypalContainer.innerHTML = '';
+
+            try {
+              var orderRes = await fetch('/api/paypal/create-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: result.service ? result.service.amount : 0, serviceId: serviceId }),
+              });
+              var orderData = await orderRes.json();
+              if (!orderData.success) throw new Error(orderData.message);
+
+              paypal.Buttons({
+                createOrder: function () { return orderData.orderID; },
+                onApprove: function (data) {
+                  fetch('/api/paypal/capture-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderID: data.orderID, serviceId: serviceId }),
+                  }).then(function (capRes) { return capRes.json(); }).then(function (capData) {
+                    if (capData.success) status.textContent = 'Payment successful! Service is now active.';
+                    else status.textContent = 'Payment could not be verified. Please contact support.';
+                    paypalContainer.style.display = 'none';
+                    btn.style.display = '';
+                    if (paymentMethodEl) paymentMethodEl.style.display = '';
+                    loadServices();
+                  }).catch(function () {
+                    status.textContent = 'Verification failed. Please contact support.';
+                    paypalContainer.style.display = 'none';
+                    btn.style.display = '';
+                    if (paymentMethodEl) paymentMethodEl.style.display = '';
+                    loadServices();
+                  });
+                },
+                onCancel: function () {
+                  status.textContent = 'Payment cancelled. You can pay later from your services list.';
+                  paypalContainer.style.display = 'none';
+                  btn.style.display = '';
+                  if (paymentMethodEl) paymentMethodEl.style.display = '';
+                  loadServices();
+                },
+              }).render('#paypal-button-container');
+            } catch (ppErr) {
+              status.className = 'form-status error';
+              status.textContent = 'Could not initialize PayPal. Please try again.';
+              paypalContainer.style.display = 'none';
+              btn.style.display = '';
+              if (paymentMethodEl) paymentMethodEl.style.display = '';
+            }
+          } else {
+            status.className = 'form-status success';
+            status.textContent = result.message;
+            form.reset();
+            if (priceDisplay) priceDisplay.textContent = 'Select a service type to see the price';
+            loadServices();
           }
         } else {
           status.className = 'form-status error';

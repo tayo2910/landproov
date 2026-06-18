@@ -7,7 +7,9 @@ const pagesRouter = require('./routes/pages');
 const contactRouter = require('./routes/contact');
 const authRouter = require('./routes/auth');
 const servicesRouter = require('./routes/services');
+const paymentRouter = require('./routes/payment');
 const paypalRouter = require('./routes/paypal');
+const flutterwaveRouter = require('./routes/flutterwave');
 const chatRouter = require('./routes/chat');
 
 const app = express();
@@ -25,7 +27,9 @@ app.use('/', pagesRouter);
 app.use('/api', contactRouter);
 app.use('/api', authRouter);
 app.use('/api', servicesRouter);
+app.use('/api', paymentRouter);
 app.use('/api', paypalRouter);
+app.use('/api', flutterwaveRouter);
 app.use('/api', chatRouter);
 
 app.use((req, res) => {
