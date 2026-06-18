@@ -298,7 +298,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var serviceTypeEl = document.getElementById('serviceType');
     var priceDisplay = document.getElementById('priceDisplay');
     var paymentMethodEl = document.getElementById('paymentMethod');
-    var paypalContainer = document.getElementById('paypal-button-container');
     var prices = { 'Land & Property Verification': 150, 'Land Registration, Survey & Documentation': 1800, 'Site Visits & Documentation': 300, 'Quantity Surveying': 300, 'Agent & Developer Meetings': 150, 'Project Monitoring': 500 };
 
     if (serviceTypeEl && priceDisplay) {
@@ -399,64 +398,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 loadServices();
               }
             });
-          } else if (pm === 'paypal' && typeof paypal !== 'undefined') {
-            status.className = 'form-status success';
-            status.textContent = 'Service created! Please complete payment below.';
-            status.style.display = 'block';
-            form.reset();
-            if (priceDisplay) priceDisplay.textContent = 'Select a service type to see the price';
-            btn.style.display = 'none';
-            if (paymentMethodEl) paymentMethodEl.style.display = 'none';
-
-            paypalContainer.style.display = 'block';
-            paypalContainer.innerHTML = '';
-
-            try {
-              var orderRes = await fetch('/api/paypal/create-order', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount: result.service ? result.service.amount : 0, serviceId: serviceId }),
-              });
-              var orderData = await orderRes.json();
-              if (!orderData.success) throw new Error(orderData.message);
-
-              paypal.Buttons({
-                createOrder: function () { return orderData.orderID; },
-                onApprove: function (data) {
-                  fetch('/api/paypal/capture-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ orderID: data.orderID, serviceId: serviceId }),
-                  }).then(function (capRes) { return capRes.json(); }).then(function (capData) {
-                    if (capData.success) status.textContent = 'Payment successful! Service is now active.';
-                    else status.textContent = 'Payment could not be verified. Please contact support.';
-                    paypalContainer.style.display = 'none';
-                    btn.style.display = '';
-                    if (paymentMethodEl) paymentMethodEl.style.display = '';
-                    loadServices();
-                  }).catch(function () {
-                    status.textContent = 'Verification failed. Please contact support.';
-                    paypalContainer.style.display = 'none';
-                    btn.style.display = '';
-                    if (paymentMethodEl) paymentMethodEl.style.display = '';
-                    loadServices();
-                  });
-                },
-                onCancel: function () {
-                  status.textContent = 'Payment cancelled. You can pay later from your services list.';
-                  paypalContainer.style.display = 'none';
-                  btn.style.display = '';
-                  if (paymentMethodEl) paymentMethodEl.style.display = '';
-                  loadServices();
-                },
-              }).render('#paypal-button-container');
-            } catch (ppErr) {
-              status.className = 'form-status error';
-              status.textContent = 'Could not initialize PayPal. Please try again.';
-              paypalContainer.style.display = 'none';
-              btn.style.display = '';
-              if (paymentMethodEl) paymentMethodEl.style.display = '';
-            }
           } else {
             status.className = 'form-status success';
             status.textContent = result.message;
