@@ -62,7 +62,7 @@ async function forgotPassword(email) {
   return data;
 }
 
-async function getUserFromSession(req) {
+async function getUserFromSession(req, res) {
   const sessionData = getSessionFromCookie(req);
   if (!sessionData) return null;
 
@@ -72,7 +72,7 @@ async function getUserFromSession(req) {
   });
 
   if (error || !data.user) {
-    clearSessionCookie(null);
+    if (res) clearSessionCookie(res);
     return null;
   }
 

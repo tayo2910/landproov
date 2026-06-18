@@ -5,7 +5,7 @@ const { getUserFromSession } = require('../controllers/authController');
 const router = Router();
 
 router.get('/user/services', async (req, res) => {
-  const user = await getUserFromSession(req);
+  const user = await getUserFromSession(req, res);
   if (!user) return res.status(401).json({ success: false, message: 'Not authenticated.' });
   try {
     const services = await getServices(user.id);
@@ -23,7 +23,7 @@ router.post(
     body('propertyLocation').trim().notEmpty().withMessage('Property location is required'),
   ],
   async (req, res) => {
-    const user = await getUserFromSession(req);
+    const user = await getUserFromSession(req, res);
     if (!user) return res.status(401).json({ success: false, message: 'Not authenticated.' });
 
     const errors = validationResult(req);

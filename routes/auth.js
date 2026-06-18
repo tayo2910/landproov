@@ -107,7 +107,7 @@ router.post(
 
 router.get('/auth/session', async (req, res) => {
   const { getUserFromSession } = require('../controllers/authController');
-  const user = await getUserFromSession(req);
+  const user = await getUserFromSession(req, res);
   if (user) {
     user.profile = user.user_metadata || {};
   }
