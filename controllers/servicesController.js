@@ -10,10 +10,17 @@ async function getServices(userId) {
   return data;
 }
 
-async function createService(userId, serviceType, propertyLocation, notes) {
+async function createService(userId, serviceType, propertyLocation, notes, amount) {
   const { data, error } = await supabase
     .from('user_services')
-    .insert([{ user_id: userId, service_type: serviceType, property_location: propertyLocation, notes: notes || '' }])
+    .insert([{
+      user_id: userId,
+      service_type: serviceType,
+      property_location: propertyLocation,
+      notes: notes || '',
+      amount,
+      payment_status: 'unpaid',
+    }])
     .select();
   if (error) throw error;
   return data[0];

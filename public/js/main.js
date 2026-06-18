@@ -220,10 +220,10 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       var services = result.services || [];
-      var active = services.filter(function (s) { return s.status === 'pending' || s.status === 'in_progress'; });
+      var paidActive = services.filter(function (s) { return s.payment_status === 'paid' && (s.status === 'pending' || s.status === 'in_progress'); });
       var completed = services.filter(function (s) { return s.status === 'completed'; });
 
-      if (activeCountEl) activeCountEl.textContent = active.length;
+      if (activeCountEl) activeCountEl.textContent = paidActive.length;
       if (completedCountEl) completedCountEl.textContent = completed.length;
 
       if (services.length === 0) {
@@ -233,39 +233,98 @@ document.addEventListener('DOMContentLoaded', function () {
 
       list.innerHTML = '';
       services.forEach(function (s) {
-        var statuses = ['pending', 'in_progress', 'completed'];
-        var currentIdx = statuses.indexOf(s.status);
-        if (currentIdx === -1) currentIdx = 0;
-
-        var statusLabels = { pending: 'Requested', in_progress: 'In Progress', completed: 'Completed' };
-        var statusColors = { pending: 'var(--gold)', in_progress: 'var(--forest)', completed: 'var(--green)' };
-
         var card = document.createElement('div');
         card.className = 'service-card-full';
 
         var created = new Date(s.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        var amountFormatted = s.amount ? '$' + (s.amount / 100).toFixed(2) : '';
 
-        card.innerHTML =
-          '<div class="service-card-header">' +
-            '<div>' +
-              '<h3>' + s.service_type + '</h3>' +
-              '<p class="service-card-location">' + s.property_location + '</p>' +
+        if (s.payment_status === 'paid') {
+          var statuses = ['pending', 'in_progress', 'completed'];
+          var currentIdx = statuses.indexOf(s.status);
+          if (currentIdx === -1) currentIdx = 0;
+          var statusLabels = { pending: 'Requested', in_progress: 'In Progress', completed: 'Completed' };
+          var statusColors = { pending: 'var(--gold)', in_progress: 'var(--forest)', completed: 'var(--green)' };
+
+          card.innerHTML =
+            '<div class="service-card-header">' +
+              '<div>' +
+                '<h3>' + s.service_type + '</h3>' +
+                '<p class="service-card-location">' + s.property_location + '</p>' +
+              '</div>' +
+              '<span class="service-status" style="background:' + statusColors[s.status] + ';">' + statusLabels[s.status] + '</span>' +
             '</div>' +
-            '<span class="service-status" style="background:' + statusColors[s.status] + ';">' + statusLabels[s.status] + '</span>' +
-          '</div>' +
-          '<div class="service-progress">' +
-            statuses.map(function (st, i) {
-              var label = statusLabels[st];
-              var isDone = i <= currentIdx;
-              var isCurrent = i === currentIdx;
-              return '<div class="progress-step' + (isDone ? ' done' : '') + (isCurrent ? ' current' : '') + '">' +
-                '<div class="progress-dot"></div>' +
-                '<span>' + label + '</span>' +
-              '</div>';
-            }).join('') +
-          '</div>' +
-          (s.notes ? '<p class="service-notes">' + s.notes + '</p>' : '') +
-          '<p class="service-date">Requested ' + created + '</p>';
+            '<div class="service-progress">' +
+              statuses.map(function (st, i) {
+                var label = statusLabels[st];
+                var isDone = i <= currentIdx;
+                var isCurrent = i === currentIdx;
+                return '<div class="progress-step' + (isDone ? ' done' : '') + (isCurrent ? ' current' : '') + '">' +
+                  '<div class="progress-dot"></div>' +
+                  '<span>' + label + '</span>' +
+                '</div>';
+              }).join('') +
+            '</div>' +
+            (s.notes ? '<p class="service-notes">' + s.notes + '</p>' : '') +
+            '<p class="service-date">Requested ' + created + '</p>';
+        } else {
+          var payLabel = s.payment_status === 'failed' ? 'Payment failed' : 'Awaiting payment';
+          card.innerHTML =
+            '<div class="service-card-header">' +
+              '<div>' +
+                '<h3>' + s.service_type + '</h3>' +
+                '<p class="service-card-location">' + s.property_location + '</p>' +
+              '</div>' +
+              '<span class="service-status" style="background:var(--gray);">' + payLabel + '</span>' +
+            '</div>' +
+            (s.notes ? '<p class="service-notes">' + s.notes + '</p>' : '') +
+            '<p class="service-date">Requested ' + created + '</p>' +
+            '<div style="margin-top:16px;display:flex;align-items:center;gap:12px;">' +
+              '<span style="font-weight:700;font-size:1.2rem;color:var(--forest);">' + amountFormatted + '</span>' +
+              '<button class="btn btn-primary pay-now-btn" data-service-id="' + s.id + '" data-amount="' + (s.amount || 0) + '" data-access-code="' + (s.access_code || '') + '" style="padding:8px 20px;font-size:0.9rem;">Pay Now</button>' +
+            '</div>';
+
+          var payBtn = card.querySelector('.pay-now-btn');
+          if (payBtn) {
+            payBtn.addEventListener('click', async function () {
+              payBtn.disabled = true;
+              payBtn.textContent = 'Redirecting...';
+              try {
+                var initRes = await fetch('/api/payment/init', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    amount: s.amount,
+                    metadata: { service_id: s.id, service_type: s.service_type },
+                  }),
+                });
+                var initData = await initRes.json();
+                if (initData.success && initData.data.access_code) {
+                  var handler = PaystackPop.setup({
+                    access_code: initData.data.access_code,
+                    onClose: function () { loadServices(); },
+                    callback: function (transaction) {
+                      fetch('/api/payment/verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reference: transaction.reference, serviceId: s.id }),
+                      }).then(function () { loadServices(); }).catch(function () { loadServices(); });
+                    },
+                  });
+                  handler.openIframe();
+                } else {
+                  alert('Could not initialize payment. Please try again.');
+                  payBtn.disabled = false;
+                  payBtn.textContent = 'Pay Now';
+                }
+              } catch (err) {
+                alert('Network error. Please try again.');
+                payBtn.disabled = false;
+                payBtn.textContent = 'Pay Now';
+              }
+            });
+          }
+        }
 
         list.appendChild(card);
       });
@@ -283,17 +342,31 @@ document.addEventListener('DOMContentLoaded', function () {
 
       var status = document.getElementById('serviceFormStatus');
       var btn = document.getElementById('serviceSubmitBtn');
+      var notice = document.getElementById('paystackNotice');
 
       status.style.display = 'none';
       status.className = 'form-status';
       btn.disabled = true;
       btn.textContent = 'Submitting...';
+      if (notice) notice.style.display = 'none';
 
       try {
+        var amountDollars = parseFloat(document.getElementById('serviceAmount').value);
+        if (isNaN(amountDollars) || amountDollars < 1) {
+          status.className = 'form-status error';
+          status.textContent = 'Please enter a valid amount (minimum $1.00).';
+          status.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Submit request';
+          return;
+        }
+        var amountCents = Math.round(amountDollars * 100);
+
         var data = {
           serviceType: document.getElementById('serviceType').value,
           propertyLocation: document.getElementById('propertyLocation').value,
           notes: document.getElementById('serviceNotes').value,
+          amount: amountCents,
         };
 
         var res = await fetch('/api/user/services', {
@@ -305,22 +378,52 @@ document.addEventListener('DOMContentLoaded', function () {
         var result = await res.json();
 
         if (result.success) {
-          status.className = 'form-status success';
-          status.textContent = result.message;
-          form.reset();
-          loadServices();
+          if (result.access_code && PAYSTACK_PUBLIC_KEY) {
+            status.className = 'form-status success';
+            status.textContent = 'Service created! Opening payment...';
+            status.style.display = 'block';
+            form.reset();
+
+            var handler = PaystackPop.setup({
+              access_code: result.access_code,
+              onClose: function () {
+                status.textContent = 'Payment cancelled. You can pay later from your services list.';
+                loadServices();
+              },
+              callback: function (transaction) {
+                fetch('/api/payment/verify', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ reference: transaction.reference, serviceId: result.service ? result.service.id : null }),
+                }).then(function () {
+                  status.textContent = 'Payment successful! Service is now active.';
+                  loadServices();
+                }).catch(function () {
+                  status.textContent = 'Payment completed but verification pending. Refresh to check status.';
+                  loadServices();
+                });
+              }
+            });
+            handler.openIframe();
+          } else {
+            status.className = 'form-status success';
+            status.textContent = result.message;
+            form.reset();
+            loadServices();
+          }
         } else {
           status.className = 'form-status error';
           status.textContent = result.errors
             ? result.errors.map(function (e) { return e.msg; }).join(', ')
             : result.message || 'Something went wrong.';
+          status.style.display = 'block';
         }
       } catch (err) {
         status.className = 'form-status error';
         status.textContent = 'Network error. Please try again.';
+        status.style.display = 'block';
       }
 
-      status.style.display = 'block';
       btn.disabled = false;
       btn.textContent = 'Submit request';
     });

@@ -59,11 +59,16 @@
               <input type="text" id="propertyLocation" name="propertyLocation" placeholder="e.g. Lekki, Lagos" required>
             </div>
             <div class="form-group">
+              <label for="serviceAmount">Amount (USD)</label>
+              <input type="number" id="serviceAmount" name="serviceAmount" placeholder="e.g. 50.00" min="1" step="0.01" required>
+            </div>
+            <div class="form-group">
               <label for="serviceNotes">Additional notes (optional)</label>
               <textarea id="serviceNotes" name="serviceNotes" rows="2" placeholder="Any specific details..."></textarea>
             </div>
             <div id="serviceFormStatus" class="form-status" style="display:none;"></div>
             <button type="submit" class="btn btn-primary" id="serviceSubmitBtn">Submit request</button>
+            <p id="paystackNotice" style="margin-top:8px;font-size:0.85rem;color:var(--gray);display:none;">You will be redirected to Paystack to complete payment after submitting.</p>
           </form>
         </div>
       </div>
@@ -78,4 +83,6 @@
   </section>
 
 <%- include('partials/footer') %>
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script>var PAYSTACK_PUBLIC_KEY = '<%= process.env.PAYSTACK_PUBLIC_KEY || "" %>'; var USER_EMAIL = '<%= user ? user.email : "" %>';</script>
 <%- include('partials/scripts') %>
