@@ -1,0 +1,138 @@
+<%- include('partials/head', { title: 'Contact Us — Landproov Property Services' }) %>
+<%- include('partials/nav') %>
+
+  <section class="page-header">
+    <div class="container">
+      <p class="eyebrow">Get in touch</p>
+      <h1>Tell us about your property</h1>
+      <p>We'll get back to you within one working day with next steps and pricing for your situation.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="contact-grid">
+        <form id="contactForm" novalidate>
+          <div class="form-group">
+            <label for="name">Full name</label>
+            <input type="text" id="name" name="name" required>
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+          </div>
+          <div class="form-group">
+            <label for="phone">Phone number</label>
+            <div class="phone-wrapper">
+              <select id="phoneCode" class="phone-code">
+                <option value="+234">🇳🇬 +234</option>
+                <option value="+44" selected>🇬🇧 +44</option>
+                <option value="+1">🇺🇸 +1</option>
+                <option value="+1">🇨🇦 +1</option>
+                <option value="+61">🇦🇺 +61</option>
+                <option value="+49">🇩🇪 +49</option>
+                <option value="+33">🇫🇷 +33</option>
+                <option value="+31">🇳🇱 +31</option>
+                <option value="+46">🇸🇪 +46</option>
+                <option value="+47">🇳🇴 +47</option>
+                <option value="+353">🇮🇪 +353</option>
+                <option value="+41">🇨🇭 +41</option>
+                <option value="+971">🇦🇪 +971</option>
+                <option value="+27">🇿🇦 +27</option>
+              </select>
+              <input type="tel" id="phone" name="phone" placeholder="e.g. 7XXX XXXXXX">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="location">Current location</label>
+            <select id="location" name="location">
+              <option value="">Select your country...</option>
+              <option value="Nigeria">🇳🇬 Nigeria</option>
+              <option value="United Kingdom">🇬🇧 United Kingdom</option>
+              <option value="United States">🇺🇸 United States</option>
+              <option value="Canada">🇨🇦 Canada</option>
+              <option value="Australia">🇦🇺 Australia</option>
+              <option value="Germany">🇩🇪 Germany</option>
+              <option value="France">🇫🇷 France</option>
+              <option value="Netherlands">🇳🇱 Netherlands</option>
+              <option value="Sweden">🇸🇪 Sweden</option>
+              <option value="Norway">🇳🇴 Norway</option>
+              <option value="Ireland">🇮🇪 Ireland</option>
+              <option value="Switzerland">🇨🇭 Switzerland</option>
+              <option value="United Arab Emirates">🇦🇪 United Arab Emirates</option>
+              <option value="South Africa">🇿🇦 South Africa</option>
+              <option value="Italy">🇮🇹 Italy</option>
+              <option value="Spain">🇪🇸 Spain</option>
+              <option value="Belgium">🇧🇪 Belgium</option>
+              <option value="Austria">🇦🇹 Austria</option>
+              <option value="Denmark">🇩🇰 Denmark</option>
+              <option value="Finland">🇫🇮 Finland</option>
+              <option value="Poland">🇵🇱 Poland</option>
+              <option value="Portugal">🇵🇹 Portugal</option>
+              <option value="Greece">🇬🇷 Greece</option>
+              <option value="Czech Republic">🇨🇿 Czech Republic</option>
+              <option value="Romania">🇷🇴 Romania</option>
+              <option value="Hungary">🇭🇺 Hungary</option>
+              <option value="Ghana">🇬🇭 Ghana</option>
+              <option value="Kenya">🇰🇪 Kenya</option>
+              <option value="Egypt">🇪🇬 Egypt</option>
+              <option value="Saudi Arabia">🇸🇦 Saudi Arabia</option>
+              <option value="Qatar">🇶🇦 Qatar</option>
+              <option value="Kuwait">🇰🇼 Kuwait</option>
+              <option value="Bahrain">🇧🇭 Bahrain</option>
+              <option value="Oman">🇴🇲 Oman</option>
+              <option value="India">🇮🇳 India</option>
+              <option value="China">🇨🇳 China</option>
+              <option value="Japan">🇯🇵 Japan</option>
+              <option value="Singapore">🇸🇬 Singapore</option>
+              <option value="Malaysia">🇲🇾 Malaysia</option>
+              <option value="Brazil">🇧🇷 Brazil</option>
+              <option value="Mexico">🇲🇽 Mexico</option>
+              <option value="Argentina">🇦🇷 Argentina</option>
+              <option value="Other">🌍 Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="propertyLocation">Property location in Nigeria</label>
+            <input type="text" id="propertyLocation" name="propertyLocation" placeholder="e.g. Lekki, Lagos">
+          </div>
+          <div class="form-group">
+            <label for="service">Service needed</label>
+            <select id="service" name="service">
+              <option value="">Select a service</option>
+              <option value="Land & property verification">Land &amp; property verification</option>
+              <option value="Site visit & documentation">Site visit &amp; documentation</option>
+              <option value="Quantity surveying">Quantity surveying</option>
+              <option value="Agent & developer meetings">Agent &amp; developer meetings</option>
+              <option value="Project monitoring">Project monitoring</option>
+              <option value="Rental property management">Rental property management</option>
+              <option value="Not sure — I'd like advice">Not sure — I'd like advice</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" placeholder="e.g. I have a plot of land in Lekki and want to confirm the title is genuine before I pay the balance."></textarea>
+          </div>
+          <div id="formStatus" style="display:none;margin-bottom:16px;padding:12px 16px;border-radius:8px;font-size:0.9375rem;"></div>
+          <button type="submit" class="btn btn-primary" id="submitBtn">Send enquiry</button>
+        </form>
+        <aside class="contact-sidebar">
+          <div class="contact-sidebar-item">
+            <h4>Email</h4>
+            <p>info@landproov.com</p>
+          </div>
+          <div class="contact-sidebar-item">
+            <h4>WhatsApp</h4>
+            <p><a href="https://wa.me/2347060543899" target="_blank" rel="noopener" style="color:var(--green);text-decoration:underline;">0706 054 3899</a></p>
+          </div>
+          <div class="contact-sidebar-item">
+            <h4>Response time</h4>
+            <p>Within one working day</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+<%- include('partials/footer') %>
+<%- include('partials/scripts') %>

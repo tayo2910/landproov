@@ -1,0 +1,36 @@
+<%- include('partials/head', { title: 'Log In' }) %>
+<%- include('partials/nav') %>
+
+  <section class="page-header">
+    <div class="container">
+      <p class="eyebrow">Welcome back</p>
+      <h1>Log in to your account</h1>
+      <p>Access your dashboard and property reports.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="auth-wrapper">
+        <form id="loginForm" class="auth-form" novalidate>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Your password" required>
+          </div>
+          <div class="form-group" style="text-align:right;">
+            <a href="/forgot-password" class="forgot-link">Forgot password?</a>
+          </div>
+          <div id="formStatus" class="form-status" style="display:none;"></div>
+          <button type="submit" class="btn btn-primary" id="submitBtn" style="width:100%;">Log in</button>
+        </form>
+        <p class="auth-alt">Don't have an account? <a href="/signup">Sign up</a></p>
+      </div>
+    </div>
+  </section>
+
+<%- include('partials/footer') %>
+<%- include('partials/scripts') %>

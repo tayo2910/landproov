@@ -1,0 +1,328 @@
+document.addEventListener('DOMContentLoaded', function () {
+  var toggle = document.querySelector('.mobile-toggle');
+  var navLinks = document.querySelector('.nav-links');
+
+  if (toggle && navLinks) {
+    toggle.addEventListener('click', function () {
+      navLinks.classList.toggle('open');
+      toggle.classList.toggle('is-open');
+      document.body.style.overflow = navLinks.classList.contains('open') ? 'hidden' : '';
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!toggle.contains(e.target) && !navLinks.contains(e.target)) {
+        navLinks.classList.remove('open');
+        toggle.classList.remove('is-open');
+        document.body.style.overflow = '';
+      }
+    });
+  }
+
+  var readMoreBtns = document.querySelectorAll('.read-more');
+  readMoreBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var expanded = this.parentElement.querySelector('.card-expanded');
+      if (expanded) {
+        expanded.classList.toggle('open');
+        this.textContent = expanded.classList.contains('open') ? 'Show less' : 'Read more';
+      }
+    });
+  });
+
+  var form = document.getElementById('contactForm');
+  if (form) {
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      var status = document.getElementById('formStatus');
+      var btn = document.getElementById('submitBtn');
+
+      status.style.display = 'none';
+      status.className = 'form-status';
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+
+      try {
+        var data = {
+          name: document.getElementById('name').value,
+          email: document.getElementById('email').value,
+          phone: (document.getElementById('phoneCode') ? document.getElementById('phoneCode').value : '') + document.getElementById('phone').value,
+          location: document.getElementById('location').value,
+          propertyLocation: document.getElementById('propertyLocation').value,
+          service: document.getElementById('service').value,
+          message: document.getElementById('message').value,
+        };
+
+        var res = await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        var result = await res.json();
+
+        if (result.success) {
+          status.className = 'form-status success';
+          status.textContent = result.message;
+          form.reset();
+        } else {
+          status.className = 'form-status error';
+          status.textContent = result.errors
+            ? result.errors.map(function (e) { return e.msg; }).join(', ')
+            : result.message || 'Something went wrong.';
+        }
+      } catch (err) {
+        status.className = 'form-status error';
+        status.textContent = 'Network error. Please try again.';
+      }
+
+      status.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Send enquiry';
+    });
+  }
+
+  function handleAuthForm(formId, endpoint, redirect) {
+    var form = document.getElementById(formId);
+    if (!form) return;
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      var status = form.querySelector('#formStatus');
+      var btn = form.querySelector('#submitBtn');
+
+      status.style.display = 'none';
+      status.className = 'form-status';
+      btn.disabled = true;
+      btn.textContent = 'Please wait...';
+
+      try {
+        var data = {
+          email: document.getElementById('email').value,
+          fullName: document.getElementById('fullName') ? document.getElementById('fullName').value : '',
+          phone: (document.getElementById('phoneCode') ? document.getElementById('phoneCode').value : '') + (document.getElementById('phone') ? document.getElementById('phone').value : ''),
+          location: document.getElementById('location') ? document.getElementById('location').value : '',
+          password: document.getElementById('password').value,
+          confirmPassword: document.getElementById('confirmPassword') ? document.getElementById('confirmPassword').value : '',
+          agreeTerms: document.getElementById('agreeTerms') ? document.getElementById('agreeTerms').checked : false,
+          recaptchaToken: (function(){ try { return document.querySelector('.g-recaptcha') ? grecaptcha.getResponse() : ''; } catch(e) { return ''; } })(),
+        };
+
+        var res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        var result = await res.json();
+
+        if (result.success) {
+          status.className = 'form-status success';
+          status.textContent = result.message;
+          var dest = result.redirect !== false ? redirect : '/login';
+          if (dest) {
+            setTimeout(function () { window.location.href = dest; }, 1000);
+          }
+        } else {
+          status.className = 'form-status error';
+          status.textContent = result.errors
+            ? result.errors.map(function (e) { return e.msg; }).join(', ')
+            : result.message || 'Something went wrong.';
+        }
+      } catch (err) {
+        status.className = 'form-status error';
+        status.textContent = 'Network error. Please try again.';
+      }
+
+      status.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = formId === 'signupForm' ? 'Create account' : formId === 'forgotPasswordForm' ? 'Send reset link' : 'Log in';
+    });
+  }
+
+  var termsLink = document.getElementById('termsLink');
+  var termsModal = document.getElementById('termsModal');
+  var termsClose = document.getElementById('termsModalClose');
+  var termsAccept = document.getElementById('termsModalAccept');
+  var agreeTerms = document.getElementById('agreeTerms');
+  var submitBtn = document.getElementById('submitBtn');
+
+  if (agreeTerms && submitBtn) {
+    agreeTerms.addEventListener('change', function () {
+      submitBtn.disabled = !agreeTerms.checked;
+    });
+  }
+
+  if (termsLink && termsModal) {
+    function openTerms() {
+      termsModal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+    function closeTerms() {
+      termsModal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+    termsLink.addEventListener('click', function (e) { e.preventDefault(); openTerms(); });
+    if (termsClose) termsClose.addEventListener('click', closeTerms);
+    if (termsAccept) termsAccept.addEventListener('click', closeTerms);
+    termsModal.addEventListener('click', function (e) {
+      if (e.target === termsModal) closeTerms();
+    });
+  }
+
+  handleAuthForm('signupForm', '/api/auth/signup', typeof NEXT_PAGE !== 'undefined' ? NEXT_PAGE : '/dashboard');
+  handleAuthForm('loginForm', '/api/auth/login', '/dashboard');
+  handleAuthForm('forgotPasswordForm', '/api/auth/forgot-password', null);
+
+  var logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async function (e) {
+      e.preventDefault();
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/';
+    });
+  }
+
+  if (window.location.pathname === '/dashboard') {
+    loadDashboardProfile();
+    loadServices();
+    setupServiceForm();
+  }
+
+  async function loadDashboardProfile() {
+    try {
+      var res = await fetch('/api/auth/session');
+      var data = await res.json();
+      if (data.authenticated && data.user) {
+        var nameEl = document.getElementById('userDisplayName');
+        var profileNameEl = document.getElementById('profileName');
+        var name = (data.user.user_metadata && data.user.user_metadata.full_name) || data.user.email || 'Client';
+        if (nameEl) nameEl.textContent = name;
+        if (profileNameEl) profileNameEl.textContent = (data.user.user_metadata && data.user.user_metadata.full_name) || '';
+      }
+    } catch (e) {}
+  }
+
+  async function loadServices() {
+    var list = document.getElementById('servicesList');
+    var activeCountEl = document.getElementById('activeServiceCount');
+    var completedCountEl = document.getElementById('completedServiceCount');
+    if (!list) return;
+
+    try {
+      var res = await fetch('/api/user/services');
+      var result = await res.json();
+
+      if (!result.success) {
+        list.innerHTML = '<p style="color:var(--gray);">Could not load services.</p>';
+        return;
+      }
+
+      var services = result.services || [];
+      var active = services.filter(function (s) { return s.status === 'pending' || s.status === 'in_progress'; });
+      var completed = services.filter(function (s) { return s.status === 'completed'; });
+
+      if (activeCountEl) activeCountEl.textContent = active.length;
+      if (completedCountEl) completedCountEl.textContent = completed.length;
+
+      if (services.length === 0) {
+        list.innerHTML = '<p style="color:var(--gray);">No services yet. Use the form above to request one.</p>';
+        return;
+      }
+
+      list.innerHTML = '';
+      services.forEach(function (s) {
+        var statuses = ['pending', 'in_progress', 'completed'];
+        var currentIdx = statuses.indexOf(s.status);
+        if (currentIdx === -1) currentIdx = 0;
+
+        var statusLabels = { pending: 'Requested', in_progress: 'In Progress', completed: 'Completed' };
+        var statusColors = { pending: 'var(--gold)', in_progress: 'var(--forest)', completed: 'var(--green)' };
+
+        var card = document.createElement('div');
+        card.className = 'service-card-full';
+
+        var created = new Date(s.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+        card.innerHTML =
+          '<div class="service-card-header">' +
+            '<div>' +
+              '<h3>' + s.service_type + '</h3>' +
+              '<p class="service-card-location">' + s.property_location + '</p>' +
+            '</div>' +
+            '<span class="service-status" style="background:' + statusColors[s.status] + ';">' + statusLabels[s.status] + '</span>' +
+          '</div>' +
+          '<div class="service-progress">' +
+            statuses.map(function (st, i) {
+              var label = statusLabels[st];
+              var isDone = i <= currentIdx;
+              var isCurrent = i === currentIdx;
+              return '<div class="progress-step' + (isDone ? ' done' : '') + (isCurrent ? ' current' : '') + '">' +
+                '<div class="progress-dot"></div>' +
+                '<span>' + label + '</span>' +
+              '</div>';
+            }).join('') +
+          '</div>' +
+          (s.notes ? '<p class="service-notes">' + s.notes + '</p>' : '') +
+          '<p class="service-date">Requested ' + created + '</p>';
+
+        list.appendChild(card);
+      });
+    } catch (err) {
+      list.innerHTML = '<p style="color:var(--gray);">Could not load services.</p>';
+    }
+  }
+
+  function setupServiceForm() {
+    var form = document.getElementById('serviceForm');
+    if (!form) return;
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      var status = document.getElementById('serviceFormStatus');
+      var btn = document.getElementById('serviceSubmitBtn');
+
+      status.style.display = 'none';
+      status.className = 'form-status';
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+
+      try {
+        var data = {
+          serviceType: document.getElementById('serviceType').value,
+          propertyLocation: document.getElementById('propertyLocation').value,
+          notes: document.getElementById('serviceNotes').value,
+        };
+
+        var res = await fetch('/api/user/services', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        var result = await res.json();
+
+        if (result.success) {
+          status.className = 'form-status success';
+          status.textContent = result.message;
+          form.reset();
+          loadServices();
+        } else {
+          status.className = 'form-status error';
+          status.textContent = result.errors
+            ? result.errors.map(function (e) { return e.msg; }).join(', ')
+            : result.message || 'Something went wrong.';
+        }
+      } catch (err) {
+        status.className = 'form-status error';
+        status.textContent = 'Network error. Please try again.';
+      }
+
+      status.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Submit request';
+    });
+  }
+});

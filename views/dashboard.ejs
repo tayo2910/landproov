@@ -1,0 +1,81 @@
+<%- include('partials/head', { title: 'Dashboard' }) %>
+<%- include('partials/nav') %>
+
+  <section class="page-header">
+    <div class="container">
+      <p class="eyebrow">Dashboard</p>
+      <h1>Welcome, <span id="userDisplayName" style="text-transform:capitalize;"><%= user && user.user_metadata && user.user_metadata.full_name ? user.user_metadata.full_name : (user ? user.email : 'Client') %></span></h1>
+      <p>Your properties, enquiries, and reports at a glance.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="dashboard-grid">
+        <div class="dashboard-card">
+          <h3>Active Services</h3>
+          <p class="dashboard-stat" id="activeServiceCount">0</p>
+          <p class="dashboard-label">Services in progress</p>
+        </div>
+        <div class="dashboard-card">
+          <h3>Completed</h3>
+          <p class="dashboard-stat" id="completedServiceCount">0</p>
+          <p class="dashboard-label">Services completed</p>
+        </div>
+        <div class="dashboard-card">
+          <h3>Reports</h3>
+          <p class="dashboard-stat">—</p>
+          <p class="dashboard-label">Reports available to view</p>
+        </div>
+      </div>
+
+      <div class="dashboard-split" style="margin-top:48px;display:grid;grid-template-columns:1fr 1fr;gap:32px;">
+        <div>
+          <h2 style="font-family:var(--font-serif);font-size:1.5rem;color:var(--green);margin-bottom:20px;">Profile</h2>
+          <div class="profile-card">
+            <div class="profile-row"><span class="profile-label">Name</span><span id="profileName"><%= user && user.user_metadata && user.user_metadata.full_name ? user.user_metadata.full_name : '' %></span></div>
+            <div class="profile-row"><span class="profile-label">Email</span><span id="profileEmail"><%= user ? user.email : '' %></span></div>
+            <div class="profile-row"><span class="profile-label">Phone</span><span id="profilePhone"><%= user && user.user_metadata ? user.user_metadata.phone || '' : '' %></span></div>
+            <div class="profile-row"><span class="profile-label">Location</span><span id="profileLocation"><%= user && user.user_metadata ? user.user_metadata.location || '' : '' %></span></div>
+          </div>
+        </div>
+        <div>
+          <h2 style="font-family:var(--font-serif);font-size:1.5rem;color:var(--green);margin-bottom:20px;">Request a Service</h2>
+          <form id="serviceForm" class="service-form" novalidate>
+            <div class="form-group">
+              <label for="serviceType">Service type</label>
+              <select id="serviceType" name="serviceType" required>
+                <option value="">Select a service...</option>
+                <option value="Land & Property Verification">Land & Property Verification</option>
+                <option value="Land Registration, Survey & Documentation">Land Registration, Survey & Documentation</option>
+                <option value="Site Visits & Documentation">Site Visits & Documentation</option>
+                <option value="Quantity Surveying">Quantity Surveying</option>
+                <option value="Agent & Developer Meetings">Agent & Developer Meetings</option>
+                <option value="Project Monitoring">Project Monitoring</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="propertyLocation">Property location</label>
+              <input type="text" id="propertyLocation" name="propertyLocation" placeholder="e.g. Lekki, Lagos" required>
+            </div>
+            <div class="form-group">
+              <label for="serviceNotes">Additional notes (optional)</label>
+              <textarea id="serviceNotes" name="serviceNotes" rows="2" placeholder="Any specific details..."></textarea>
+            </div>
+            <div id="serviceFormStatus" class="form-status" style="display:none;"></div>
+            <button type="submit" class="btn btn-primary" id="serviceSubmitBtn">Submit request</button>
+          </form>
+        </div>
+      </div>
+
+      <div style="margin-top:48px;">
+        <h2 style="font-family:var(--font-serif);font-size:1.5rem;color:var(--green);margin-bottom:20px;">My Services</h2>
+        <div id="servicesList">
+          <p style="color:var(--gray);">Loading your services...</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+<%- include('partials/footer') %>
+<%- include('partials/scripts') %>
