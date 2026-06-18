@@ -1,19 +1,18 @@
 const { Router } = require('express');
-const { initializeTransaction, verifyTransaction } = require('../controllers/paymentController');
+const { createOrder, captureOrder } = require('../controllers/paypalController');
 const { getUserFromSession } = require('../controllers/authController');
 const router = Router();
 
-router.post('/payment/init', async (req, res) => {
+router.post('/paypal/create-order', async (req, res) => {
   const user = await getUserFromSession(req);
   if (!user) return res.status(401).json({ success: false, message: 'Not authenticated.' });
-  req.body.email = user.email;
-  await initializeTransaction(req, res);
+  await createOrder(req, res);
 });
 
-router.post('/payment/verify', async (req, res) => {
+router.post('/paypal/capture-order', async (req, res) => {
   const user = await getUserFromSession(req);
   if (!user) return res.status(401).json({ success: false, message: 'Not authenticated.' });
-  await verifyTransaction(req, res);
+  await captureOrder(req, res);
 });
 
 module.exports = router;
