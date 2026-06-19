@@ -1,4 +1,13 @@
 document.addEventListener('DOMContentLoaded', function () {
+  var locEl = document.getElementById('location');
+  var otherEl = document.getElementById('locationOther');
+  if (locEl && otherEl) {
+    locEl.addEventListener('change', function () {
+      otherEl.style.display = this.value === 'Other' ? 'block' : 'none';
+      if (this.value !== 'Other') otherEl.value = '';
+    });
+  }
+
   var toggle = document.querySelector('.mobile-toggle');
   var navLinks = document.querySelector('.nav-links');
 
@@ -47,7 +56,12 @@ document.addEventListener('DOMContentLoaded', function () {
           name: document.getElementById('name').value,
           email: document.getElementById('email').value,
           phone: (document.getElementById('phoneCode') ? document.getElementById('phoneCode').value : '') + document.getElementById('phone').value,
-          location: document.getElementById('location').value,
+          location: (function(){
+            var locEl = document.getElementById('location');
+            var otherEl = document.getElementById('locationOther');
+            if (locEl && locEl.value === 'Other' && otherEl && otherEl.value.trim()) return otherEl.value.trim();
+            return locEl ? locEl.value : '';
+          })(),
           propertyLocation: document.getElementById('propertyLocation').value,
           service: document.getElementById('service').value,
           message: document.getElementById('message').value,
@@ -102,7 +116,12 @@ document.addEventListener('DOMContentLoaded', function () {
           email: document.getElementById('email').value,
           fullName: document.getElementById('fullName') ? document.getElementById('fullName').value : '',
           phone: (document.getElementById('phoneCode') ? document.getElementById('phoneCode').value : '') + (document.getElementById('phone') ? document.getElementById('phone').value : ''),
-          location: document.getElementById('location') ? document.getElementById('location').value : '',
+          location: (function(){
+            var locEl = document.getElementById('location');
+            var otherEl = document.getElementById('locationOther');
+            if (locEl && locEl.value === 'Other' && otherEl && otherEl.value.trim()) return otherEl.value.trim();
+            return locEl ? locEl.value : '';
+          })(),
           password: document.getElementById('password').value,
           confirmPassword: document.getElementById('confirmPassword') ? document.getElementById('confirmPassword').value : '',
           agreeTerms: document.getElementById('agreeTerms') ? document.getElementById('agreeTerms').checked : false,

@@ -1,6 +1,6 @@
   <nav>
     <div class="container">
-      <a href="/" class="logo"><img src="/images/landproov.jpeg" alt="Landproov" class="logo-img"></a>
+      <a href="/" class="logo"><img src="/images/landproov.png" alt="Landproov" class="logo-img"></a>
       <button class="mobile-toggle" aria-label="Toggle navigation">
         <span></span><span></span><span></span>
       </button>
@@ -15,8 +15,7 @@
         <li><a href="/dashboard" <%= page === 'dashboard' ? 'class="active"' : '' %>>Dashboard</a></li>
         <li><a href="#" id="logoutBtn" class="btn btn-dark" style="background:transparent;border:1.5px solid var(--gold);color:var(--gold);">Log out</a></li>
         <% } else { %>
-        <li><a href="/login" class="btn btn-primary" <%= page === 'login' ? 'style="background:var(--forest);border-color:var(--forest);"' : '' %>>Log in</a></li>
-        <li><a href="/signup" class="btn btn-primary">Sign up</a></li>
+        <li><a href="/login" class="btn btn-primary" <%= page === 'login' ? 'style="border-color:var(--forest);color:var(--forest);"' : '' %>>Log in</a></li>
         <% } %>
         <li><a href="/signup?next=/contact" class="btn btn-primary" style="margin-left:4px;">Book a consultation</a></li>
       </ul>
